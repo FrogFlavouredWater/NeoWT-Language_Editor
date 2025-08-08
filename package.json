@@ -1,0 +1,17 @@
+{
+  "name": "neowt",
+  "version": "1.2.0",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "set ELECTRON_ENABLE_LOGGING=1 && electron ."
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.0",
+    "csv-stringify": "^6.4.6"
+  }
+}

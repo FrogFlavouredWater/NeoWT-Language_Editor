@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+               script-src 'self';
+               style-src 'self' 'unsafe-inline';
+               img-src 'self' data:;
+               connect-src 'self';">
+  <title>NeoWT</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar__left">
+    <span class="logo" aria-hidden="true"></span>
+    <span class="title">NeoWT</span>
+  </div>
+  <div class="appbar__right">
+    <button id="btnUtilities" class="btn btn--soft" title="Utilities">Utilities</button>
+    <button id="btnUndo" class="btn btn--ghost" title="Undo last change">Undo Last Change</button>
+  </div>
+</header>
+
+
+<!-- Splash is visible when root_path is empty -->
+<section id="splash" class="splash">
+  <div class="splash__card">
+    <h1>Welcome</h1>
+    <p class="muted">Choose your War Thunder <strong>root</strong> folder. I’ll use its <code>/lang</code> directory.</p>
+
+    <div class="input-group">
+      <input id="rootPath" type="text" placeholder="e.g., C:\Program Files (x86)\Steam\steamapps\common\War Thunder" />
+      <button id="btnBrowse" class="btn">Browse</button>
+    </div>
+
+    <div class="splash__actions">
+      <button id="btnAuto" class="btn btn--auto" title="Try common install paths">Automatically locate folder 🪄</button>
+      <button id="btnSaveRoot" class="btn btn--primary">Continue</button>
+    </div>
+
+    <p id="splashStatus" class="tiny muted"></p>
+  </div>
+</section>
+
+
+<!-- Editor -->
+<main id="main" class="main hidden">
+  <section class="panel">
+    <div class="grid two">
+      <div>
+        <label>CSV file</label>
+        <select id="csvSelect"></select>
+      </div>
+      <div>
+        <label>Language</label>
+        <select id="langSelect"></select>
+      </div>
+    </div>
+
+    <div class="grid one">
+      <label>Find by key or value. (not case-sensitive)</label>
+      <div class="row row--search">
+        <div class="search-input">
+          <input id="searchBox" type="text" placeholder="Type a key or phrase…">
+          <button id="btnClearSearch" class="input-clear" aria-label="Clear search" title="Clear">×</button>
+        </div>
+        <button id="btnSearch" class="btn btn--primary">Search</button>
+      </div>
+    </div>
+
+
+    <div id="results"></div>
+    <div id="changesLog" class="changes"></div>
+  </section>
+</main>
+
+<!-- Edit Modal -->
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="modal__card">
+    <h3 id="editTitle">Edit value</h3>
+    <div class="modal__body">
+      <div class="modal__meta">
+        <div><span class="muted tiny">Key</span><code id="editKey"></code></div>
+        <div><span class="muted tiny">Language</span><span id="editLang"></span></div>
+      </div>
+      <label class="muted tiny" for="editInput">New value</label>
+      <textarea id="editInput" rows="4" placeholder="Type the replacement value…"></textarea>
+    </div>
+    <div class="modal__actions">
+      <button id="editCancel" class="btn btn--ghost">Cancel (Esc)</button>
+      <button id="editSave" class="btn btn--primary">Save (Enter)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast stack -->
+<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Utilities Modal -->
+<div id="utilModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="utilTitle">
+  <div class="modal__card">
+    <h3 id="utilTitle">Utilities</h3>
+
+    <!-- ALL tiles live INSIDE this grid -->
+    <div class="util-grid">
+      <!-- Row 1 -->
+      <section class="util-card danger">
+        <h4>Delete / Reset language files</h4>
+        <p class="muted tiny">Delete War Thunder’s <code>/lang</code> folder so the game can recreate it on update/launch.</p>
+        <button id="btnDeleteLang" class="btn btn--danger">Delete /lang folder</button>
+      </section>
+
+      <section class="util-card">
+        <h4>Save profile</h4>
+        <p class="muted tiny">Snapshot your current edits. Profiles are stored locally and can be reapplied after updates.</p>
+        <div class="row">
+          <input id="profileName" type="text" placeholder="profile-YYYYMMDD-HHMMSS" />
+          <button id="btnSaveProfile" type="button" class="btn btn--compact">Save Profile</button>
+        </div>
+      </section>
+
+      <!-- Row 2 -->
+      <section class="util-card">
+        <h4>Apply profile</h4>
+        <p class="muted tiny">Replay all edits from a saved profile into the current <code>/lang</code> CSVs.</p>
+        <div class="row">
+          <select id="profileSelect"></select>
+          <button id="btnApplyProfile" type="button" class="btn btn--primary btn--compact nowrap">Apply Profile</button>
+        </div>
+      </section>
+
+      <section class="util-card">
+        <h4>Delete profile</h4>
+        <p class="muted tiny">Remove an old snapshot. This does <strong>not</strong> change your <code>/lang</code> files.</p>
+        <div class="row">
+          <select id="profileDeleteSelect"></select>
+          <button id="btnDeleteProfile" type="button" class="btn btn--danger btn--compact nowrap">Delete</button>
+        </div>
+      </section>
+
+      <!-- Row 3 (double width) -->
+      <section class="util-card span-2">
+        <h4>Launch War Thunder</h4>
+        <p class="muted tiny">Choose how to launch, then start the game directly from NeoWT.</p>
+        <div class="launch-row">
+          <label class="switch">
+            <input id="toggleSteam" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <span class="muted tiny">Launch via Steam</span>
+          <div class="spacer"></div>
+          <button id="btnLaunchWT" type="button" class="btn btn--primary btn--compact nowrap">Launch War Thunder</button>
+        </div>
+      </section>
+    </div>
+
+
+  </div>
+
+    <div class="modal__actions">
+      <button id="utilClose" class="btn btn--ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script type="module" src="renderer.js"></script>
+</body>
+</html>
