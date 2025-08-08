@@ -5,6 +5,8 @@ NeoWT is a friendly desktop app for Windows that lets you **search, edit, and ma
 **Download for Windows:**\
 👉 [NeoWT‑Setup‑1.3.0‑x64.exe](https://github.com/FrogFlavouredWater/NeoWT-Language_Editor/releases/download/Release/NeoWT-Setup-1.3.0-x64.exe)
 
+Or visit the [site](https://frogflavouredwater.github.io/NeoWT-Language_Editor/)
+
 > NeoWT edits **text only** (client‑side). It doesn’t touch gameplay and won’t give you an advantage.
 
 ---
