@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NeoWT — War Thunder Localization Editor</title>
+<meta name="description" content="NeoWT is a fast, lightweight GUI for editing War Thunder localization CSV files with fuzzy search, undo history, and profile management." />
+<style>
+  :root{
+    --bg:#0b0e13;
+    --panel:#10151d;
+    --text:#eaf1ff;
+    --muted:#a0aec0;
+    --line:rgba(255,255,255,0.06);
+    --accent1:#7c5cff;
+    --accent2:#ff3ea5;
+    --success:#32d583;
+    --shadow:0 14px 40px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    color:var(--text);
+    background: var(--bg); /* Only solid background */
+    position:relative;
+    min-height:100vh;
+    z-index:0;
+  }
+  .bg-gradient {
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    width:100vw;
+    height:100vh;
+    background:
+      radial-gradient(900px 600px at 10% -10%, rgba(124,92,255,.14), transparent 60%),
+      radial-gradient(900px 600px at 110% -10%, rgba(255,62,165,.10), transparent 60%),
+      var(--bg);
+  }
+
+  /* Header */
+  .appbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 18px;
+    background:rgba(10,12,17,.7);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text)}
+  .logo-dot{width:14px;height:14px;border-radius:50%;
+    background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    box-shadow:0 0 18px rgba(124,92,255,.45);
+  }
+  .brand b{letter-spacing:.3px}
+  .nav{display:flex; gap:14px; align-items:center}
+  .nav a{color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:10px}
+  .nav a:hover{background:rgba(255,255,255,.06); color:var(--text)}
+
+  /* Hero */
+  .hero{max-width:1100px;margin:40px auto 24px;padding:0 18px;display:grid;gap:14px}
+  .hero h1{font-size:38px; margin:0}
+  .sub{color:var(--muted); max-width:850px}
+  .cta-row{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:6px}
+
+  .btn{
+    position:relative; overflow:hidden; cursor:pointer; user-select:none;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; padding:12px 18px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.05);
+    color:var(--text); text-decoration:none; font-weight:600;
+    transition: transform .16s ease, box-shadow .25s ease, background .2s ease, border-color .2s ease;
+    box-shadow:0 8px 26px rgba(0,0,0,.35);
+  }
+  .btn:hover{ transform: translateY(-1px); box-shadow:0 12px 34px rgba(0,0,0,.45); }
+  .btn--primary{ border:0; color:#fff; background:transparent; isolation:isolate; }
+  .btn--primary::before{ content:""; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(90deg,var(--accent1),var(--accent2)); z-index:-1; }
+  .btn--ghost{ background:rgba(255,255,255,.03); }
+  .btn--xl{ padding:14px 22px; font-size:16px; }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border-radius:999px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+    font-size:12px; color:var(--text)
+  }
+  /* Add platform-specific badge tints */
+  .badge--windows {
+    background:rgba(50,213,131,0.18); /* green */
+    border-color:rgba(50,213,131,0.28);
+    color:#32d583;
+  }
+  .badge--mac, .badge--linux {
+    background:rgba(124,92,255,0.18); /* purple */
+    border-color:rgba(124,92,255,0.28);
+    color:#7c5cff;
+  }
+  .platforms{display:flex; gap:8px; flex-wrap:wrap}
+
+  /* Panels / sections */
+  .section{max-width:1100px;margin:24px auto;padding:0 18px}
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    border:1px solid var(--line); border-radius:16px; padding:16px;
+    box-shadow:var(--shadow);
+  }
+  .features{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px}
+  .card{border:1px solid var(--line); border-radius:14px; padding:14px;
+        background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+        transition: transform .18s ease, box-shadow .28s ease, border-color .28s ease, background .28s ease;
+        position:relative; overflow:hidden; min-height:120px}
+  .card::before{
+    content:""; position:absolute; inset:-1px; border-radius:14px; pointer-events:none; opacity:0;
+    background: radial-gradient(600px 260px at 15% -15%, rgba(124,92,255,.12), transparent 60%),
+                radial-gradient(600px 260px at 115% -20%, rgba(255,62,165,.10), transparent 65%);
+    transition: opacity .28s ease;
+  }
+  .card:hover{ transform: translateY(-3px); border-color:rgba(255,255,255,.18); box-shadow:var(--shadow) }
+  .card:hover::before{ opacity:1 }
+  .card h3{margin:0 0 6px 0; font-size:18px}
+  .card p{margin:0; color:var(--muted); font-size:14px}
+
+  /* FAQ */
+  .faq{display:grid; gap:10px}
+  details{
+    border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  }
+  details summary{cursor:pointer; font-weight:700; outline:none}
+  details p{color:var(--muted)}
+  details[open]{border-color:rgba(255,255,255,.14)}
+
+  /* Footer */
+  footer{padding:30px 18px; color:var(--muted); border-top:1px solid var(--line); margin-top:28px}
+  .footer-inner{max-width:1100px;margin:0 auto;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .links{display:flex; gap:12px}
+  .links a{color:var(--muted); text-decoration:none}
+  .links a:hover{color:var(--text)}
+  code{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); padding:2px 6px; border-radius:6px}
+
+  /* Responsive */
+  @media (max-width:720px){
+    .hero h1{font-size:30px}
+    .btn--xl{width:100%; justify-content:center}
+  }
+</style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+<header class="appbar">
+  <a href="#" class="brand">
+    <span class="logo-dot"></span>
+    <b>NeoWT</b>
+  </a>
+  <nav class="nav">
+    <a href="#features">Features</a>
+    <a href="#download">Download</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/FrogFlavouredWater/NeoWT-Language_Editor" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>War Thunder Localization Editor</h1>
+    <p class="sub">A lightweight GUI for editing your War Thunder <code>.csv</code> localization files. Fuzzy search, fast edits with full undo history, profiles to save/apply changes, and handy utilities for refreshing the <code>/lang</code> folder or launching the game. <br><br>Technically, you can compile for MacOS and Linux using electron, but for now, only Windows is officially supported with an installer. I am very busy, however I will fix some of the UI clashes in the coming weeks to try to release a working cross platform build.</p>
+    <div class="cta-row" id="download">
+      <a class="btn btn--primary btn--xl" href="https://github.com/FrogFlavouredWater/NeoWT-Language_Editor/releases/download/Release/NeoWT-Setup-1.3.0-x64.exe">↓ Download for Windows</a>
+      <div class="platforms">
+        <span class="badge badge--windows">Windows (supported)</span>
+        <span class="badge badge--mac" title="Runs but not officially supported">macOS (coming soon)</span>
+        <span class="badge badge--linux" title="Runs but not officially supported">Linux (coming soon)</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section panel" id="features">
+    <h2 style="margin:0 0 10px 0">Features</h2>
+    <div class="features">
+      <div class="card">
+        <h3>CSV localization editor</h3>
+        <p>Open any file in <code>/lang</code>, filter by key or value, and edit in place with an elegant UI.</p>
+      </div>
+      <div class="card">
+        <h3>Fuzzy search</h3>
+        <p>Find strings even if you don’t remember the exact wording. Highlights partial matches.</p>
+      </div>
+      <div class="card">
+        <h3>Undo history</h3>
+        <p>Every change is tracked. Undo a single edit or revert the last change instantly.</p>
+      </div>
+      <div class="card">
+        <h3>Profiles (save &amp; apply)</h3>
+        <p>Snapshot your edits into a “profile” and reapply them after game updates.</p>
+      </div>
+      <div class="card">
+        <h3>Utilities</h3>
+        <p>Delete/refresh the <code>/lang</code> folder safely, apply profiles, or launch War Thunder.</p>
+      </div>
+      <div class="card">
+        <h3>Clean, fast, themed</h3>
+        <p>Modern dark theme with subtle gradients and performance-first design.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section panel">
+    <h2 style="margin:0 0 10px 0">How it works</h2>
+    <div class="features" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+      <div class="card"><h3>1. Point to your root</h3><p>Select your War Thunder root. The app uses its <br> <code>/lang</code> directory.</p></div>
+      <div class="card"><h3>2. Search &amp; edit</h3><p>Filter by key/value and edit strings. The editor tracks your changes.</p></div>
+      <div class="card"><h3>3. Save a profile</h3><p>Make a snapshot of all edits. Keep multiple profiles for different setups.</p></div>
+      <div class="card"><h3>4. Reapply after updates</h3><p>When WT updates, refresh <code>/lang</code> and apply your profile in one click.</p></div>
+    </div>
+  </section>
+
+  <section class="section panel" id="faq">
+    <h2 style="margin:0 0 10px 0">FAQ</h2>
+    <div class="faq">
+      <details>
+        <summary>Where do the CSV files live?</summary>
+        <p>Inside your War Thunder root under <code>/lang</code>. NeoWT reads and writes those CSVs directly.</p>
+      </details>
+      <details>
+        <summary>Does this work with Steam?</summary>
+        <p>Yep. NeoWT can launch via Steam by default, or use the native launcher if you prefer.</p>
+      </details>
+      <details>
+        <summary>Is macOS/Linux supported?</summary>
+        <p>Unofficially. The UI works, but we don’t currently ship installers or test on those platforms.</p>
+      </details>
+      <details>
+        <summary>Where are my profiles stored?</summary>
+        <p>Profiles live locally next to NeoWT’s app data. They’re simple JSON snapshots of your edits.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>© <span id="y"></span> NeoWT</div>
+    <div class="links">
+      <a href="#download">Download</a>
+      <a href="https://github.com/FrogFlavouredWater/NeoWT-Language_Editor" target="_blank" rel="noopener">GitHub</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // year
+  document.getElementById('y').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

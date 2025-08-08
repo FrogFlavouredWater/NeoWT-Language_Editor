@@ -1,6 +1,5 @@
 const $ = (sel) => document.querySelector(sel);
 
-// App state
 const state = {
   cfg: null,
   filename: null,
@@ -10,19 +9,17 @@ const state = {
 };
 
 async function init() {
-  if (!window.api) return; // preload failed; splash stays visible
+  if (!window.api) return;
 
   state.cfg = await window.api.loadConfig();
   const needsSetup = !state.cfg || !state.cfg.root_path;
   $("#splash").classList.toggle("hidden", !needsSetup);
   $("#main").classList.toggle("hidden", needsSetup);
 
-  // Splash
   $("#btnBrowse").addEventListener("click", onBrowseRoot);
   $("#btnAuto").addEventListener("click", onAutoLocate);
   $("#btnSaveRoot").addEventListener("click", onSaveRoot);
 
-  // Editor
   $("#btnSearch").addEventListener("click", onSearch);
   $("#csvSelect").addEventListener("change", onCsvChange);
   $("#langSelect").addEventListener("change", onLangChange);
@@ -32,13 +29,11 @@ async function init() {
   const searchBox  = $("#searchBox");
   const btnClear   = $("#btnClearSearch");
   btnClear.addEventListener("click", clearSearch);
-  // Esc clears when typing in the search box
+
   searchBox.addEventListener("keydown", (e) => {
     if (e.key === "Escape") { e.preventDefault(); clearSearch(); }
   });
-  // updateClearVis();
 
-  // inside init(), after your existing bindings:
   document.getElementById("btnUtilities").addEventListener("click", openUtilModal);
   document.getElementById("utilClose").addEventListener("click", closeUtilModal);
   document.getElementById("btnDeleteLang").addEventListener("click", onDeleteLang);
@@ -58,20 +53,10 @@ async function init() {
 
   bindClick("#btnLaunchWT", onLaunchWT);
 
-// // Delegation backup in case the button node is replaced later
-//   const utilModalRoot = document.getElementById("utilModal");
-//   if (utilModalRoot) {
-//     utilModalRoot.addEventListener("click", (ev) => {
-//       const launchBtn = ev.target.closest("#btnLaunchWT");
-//       if (launchBtn) onLaunchWT(ev);
-//     });
-//   }
-
-  // Modal
   $("#editCancel").addEventListener("click", closeModal);
   $("#editSave").addEventListener("click", saveModal);
   $("#modal").addEventListener("click", (e) => {
-    if (e.target.id === "modal") closeModal(); // click outside card
+    if (e.target.id === "modal") closeModal();
   });
   document.addEventListener("keydown", (e) => {
     const modalOpen = $("#modal").classList.contains("open");
@@ -86,7 +71,6 @@ async function init() {
   await refreshChangesLog();
 }
 
-/* ---------- Splash ---------- */
 async function onBrowseRoot() {
   const cfg = await window.api.chooseRoot();
   if (!cfg) return;
@@ -123,7 +107,6 @@ async function onSaveRoot() {
   await afterSetup();
 }
 
-/* ---------- Editor ---------- */
 async function afterSetup() { await refreshCsvList(); }
 
 async function refreshCsvList() {
@@ -212,7 +195,6 @@ async function onUndo() {
   if ($("#searchBox").value) await onSearch();
 }
 
-
 async function refreshChangesLog() {
   const div = $("#changesLog");
   const log = await window.api.listChanges();
@@ -253,7 +235,6 @@ async function refreshChangesLog() {
 
   div.innerHTML = `<h3>Recent changes</h3>${html}`;
 
-  // Wire per-row undo
   div.querySelectorAll(".change-undo").forEach(btn => {
     btn.addEventListener("click", async (ev) => {
       const ts = ev.currentTarget.getAttribute("data-ts");
@@ -271,11 +252,10 @@ function clearSearch(){
   box.value = "";
   document.querySelector(".search-input").classList.remove("has-value");
   const resultsDiv = $("#results");
-  resultsDiv.innerHTML = "";            // remove the table/items
+  resultsDiv.innerHTML = "";
   box.focus();
 }
 
-/* ---------- Modal (animated) ---------- */
 function openModal(key, currentValue) {
   $("#editKey").textContent = key;
   $("#editLang").textContent = state.language;
@@ -284,8 +264,7 @@ function openModal(key, currentValue) {
 
   const modal = $("#modal");
   modal.classList.remove("hidden", "closing");
-  // force reflow
-  // eslint-disable-next-line no-unused-expressions
+
   modal.offsetWidth;
   modal.classList.add("open");
 
@@ -332,7 +311,7 @@ function bindClick(sel, fn){
 
 async function onLaunchWT(e){
   e?.preventDefault?.();
-  // immediate feedback so we know the click fired
+
   toast("Launching…", "info");
   try {
     const res = await window.api.launchGame?.();
@@ -347,10 +326,8 @@ async function onLaunchWT(e){
   }
 }
 
-
-/* ---------- Utilities modal ---------- */
 async function openUtilModal(){
-  // default profile name
+
   const cfg = await window.api.loadConfig();
   const steamToggle = document.getElementById("toggleSteam");
   steamToggle.checked = (cfg?.is_using_steam === 1);
@@ -358,13 +335,11 @@ async function openUtilModal(){
   const input = document.getElementById("profileName");
   if (input && !input.value) input.value = `profile-${ts}`;
 
-  // load profiles
   await refreshProfileList();
 
   const m = document.getElementById("utilModal");
   m.classList.remove("hidden");
-  // force reflow then open (anim if you kept it)
-  // eslint-disable-next-line no-unused-expressions
+
   m.offsetWidth; m.classList.add("open");
 }
 function closeUtilModal(){
@@ -396,8 +371,6 @@ async function refreshProfileList(){
   fillSelect(delSel);
 }
 
-
-/* ---------- Utility actions ---------- */
 async function onDeleteProfile(){
   const sel = document.getElementById("profileDeleteSelect");
   const name = sel && sel.value;
@@ -426,10 +399,9 @@ async function onDeleteLang(){
 
   toast(res.cleared ? "/lang deleted and history cleared." : "/lang deleted.", "success");
 
-  // Clear UI state
   document.getElementById("results").innerHTML = "";
   await refreshCsvList();
-  await refreshChangesLog();   // <-- reflect cleared history
+  await refreshChangesLog();
 }
 
 async function onSaveProfile(){
@@ -440,8 +412,6 @@ async function onSaveProfile(){
   await refreshProfileList();
 }
 
-
-
 async function onApplyProfile(){
   const sel = document.getElementById("profileSelect");
   if (!sel.value){ toast("Choose a profile first.", "error"); return; }
@@ -449,14 +419,11 @@ async function onApplyProfile(){
   if (!res.ok){ toast(res.message || "Failed to apply profile.", "error"); return; }
   toast(`Applied ${res.applied} change(s)${res.skipped?`, ${res.skipped} skipped`:``}.`, "success");
 
-  await refreshChangesLog();               // ← repopulate the Recent changes UI
+  await refreshChangesLog();
 
   if (document.getElementById("searchBox").value) await onSearch();
 }
 
-
-
-/* ---------- Toasts ---------- */
 function toast(message, type="info", ms=2600){
   const stack = $("#toastStack");
   const div = document.createElement("div");
@@ -475,7 +442,6 @@ function toast(message, type="info", ms=2600){
   div.addEventListener("click", () => { clearTimeout(t); hide(); });
 }
 
-/* ---------- Utils ---------- */
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function escapeAttr(s=""){return escapeHtml(s).replace(/"/g,"&quot;")}
 function highlight(text, query){

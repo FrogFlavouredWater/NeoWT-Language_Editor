@@ -1,4 +1,3 @@
-// src/main.js — CommonJS main process with Utilities + Profiles
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require("electron");
 const path = require("path");
 const fs = require("fs");
@@ -10,10 +9,14 @@ const { spawn } = require("child_process");
 process.on("uncaughtException", err => console.error("[main] uncaughtException:", err));
 process.on("unhandledRejection", err => console.error("[main] unhandledRejection:", err));
 
+const isProd = app.isPackaged;
+
 const isMac = process.platform === "darwin";
 
-// Paths
-const CONFIG_PATH = path.resolve(__dirname, "res", "config", "config.json");
+const CONFIG_PATH = isProd
+? path.join(app.getPath("userData"), "config.json")
+: path.resolve(__dirname, "res", "config", "config.json");
+
 const CHANGES_PATH = () => path.join(app.getPath("userData"), "res", "changes.json");
 const PROFILES_DIR = () => path.join(app.getPath("userData"), "res", "profiles");
 
@@ -24,16 +27,15 @@ function defaultConfig() {
     size_y: 800,
     lastFile: "",
     language: "",
-    is_using_steam: -1,   // -1 unknown (default), 1 steam, 0 native
+    is_using_steam: -1,
   };
 }
 
 function isSteamRoot(root) {
   if (!root) return false;
   const p = root.replace(/\\/g, "/").toLowerCase();
-  return p.includes("/steamapps/"); // covers Win/Linux/macOS Steam layouts
+  return p.includes("/steamapps/");
 }
-
 
 function ensureConfigFiles() {
   fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
@@ -58,7 +60,6 @@ function readChanges() {
 }
 function writeChanges(data) { fs.writeFileSync(CHANGES_PATH(), JSON.stringify(data, null, 2)); }
 
-// ---------- CSV utils ----------
 function detectDelimiter(text) {
   const first = text.split(/\r?\n/)[0] || "";
   const c = (first.match(/,/g) || []).length;
@@ -77,9 +78,8 @@ function writeCsv(filePath, headers, rows, delimiter) {
   fs.writeFileSync(filePath, out, "utf8");
 }
 
-// ---------- Fuzzy helpers (stricter) ----------
 const stripDiacritics = (s) =>
-    String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const norm = (s) => stripDiacritics(s).toLowerCase().trim();
 const tokenize = (s) => (norm(s).match(/[a-z0-9]+/g) || []);
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -161,7 +161,6 @@ function acceptStrict(q, key, value) {
   return { ok: score >= thr, score };
 }
 
-// ---------- Root auto-locate ----------
 function tryAutoLocateRoot() {
   const home = os.homedir();
   const guesses = new Set();
@@ -192,7 +191,6 @@ function tryAutoLocateRoot() {
   return "";
 }
 
-// ---------- Window ----------
 let win;
 async function createWindow() {
   ensureConfigFiles();
@@ -240,7 +238,6 @@ app.whenReady().then(() => {
 });
 app.on("window-all-closed", () => { if (!isMac) app.quit(); });
 
-// ---------- IPC: Config & CSV ----------
 ipcMain.handle("config:load", () => readConfig());
 ipcMain.handle("config:save", (e, patch) => {
   const prev = readConfig();
@@ -257,14 +254,12 @@ ipcMain.handle("util:launchGame", async () => {
   let cfg = readConfig();
   let mode = typeof cfg.is_using_steam === "number" ? cfg.is_using_steam : -1;
 
-  // If unknown and we have a root, infer + persist once
   if (mode === -1 && cfg.root_path) {
     mode = isSteamRoot(cfg.root_path) ? 1 : 0;
     cfg = { ...cfg, is_using_steam: mode };
     writeConfig(cfg);
   }
 
-  // If still unknown and no root, bail with guidance
   if (mode === -1) {
     return { ok: false, message: "Set a War Thunder path or choose a launch method in Utilities." };
   }
@@ -282,7 +277,6 @@ ipcMain.handle("util:launchGame", async () => {
       return { ok: true, launched: steamUrl, via: "steam" };
     }
 
-    // mode === 0 → native launcher
     const execPath = findWTExecutable(cfg.root_path);
     if (!execPath) {
       return { ok: false, message: "Could not find launcher/aces in the root. Switch to Steam in Utilities or correct the path." };
@@ -311,7 +305,6 @@ ipcMain.handle("profiles:delete", (e, profileFile) => {
   }
 });
 
-
 ipcMain.handle("dialog:chooseRoot", async () => {
   const result = await dialog.showOpenDialog({ properties: ["openDirectory"] });
   if (result.canceled || !result.filePaths[0]) return null;
@@ -326,7 +319,6 @@ ipcMain.handle("dialog:chooseRoot", async () => {
   return next;
 });
 
-
 ipcMain.handle("auto:locateRoot", () => {
   const found = tryAutoLocateRoot();
   if (!found) return null;
@@ -339,7 +331,6 @@ ipcMain.handle("auto:locateRoot", () => {
   writeConfig(next);
   return next;
 });
-
 
 ipcMain.handle("lang:listCsvs", () => {
   const { root_path } = readConfig();
@@ -397,7 +388,6 @@ ipcMain.handle("lang:applyChange", (e, { filename, language, key, newValue }) =>
   return { ok: true };
 });
 
-// ---------- IPC: Changes / Undo ----------
 ipcMain.handle("changes:list", () => readChanges());
 ipcMain.handle("changes:undo", () => {
   const log = readChanges();
@@ -438,21 +428,20 @@ ipcMain.handle("changes:undoOne", (e, ts) => {
   return { ok: true, undone: ch };
 });
 
-// ---------- IPC: Utilities ----------
 ipcMain.handle("util:deleteLang", () => {
   const { root_path } = readConfig();
   if (!root_path) return { ok: false, message: "Root path not set." };
 
   const langDir = path.join(root_path, "lang");
   if (!fs.existsSync(langDir)) {
-    // still clear the log even if the folder isn't there
+
     writeChanges({ changes: [] });
     return { ok: true, cleared: true, message: "No /lang directory found. Cleared change history." };
   }
 
   try {
     fs.rmSync(langDir, { recursive: true, force: true });
-    // also clear recent changes
+
     writeChanges({ changes: [] });
     return { ok: true, cleared: true };
   } catch (e) {
@@ -460,8 +449,6 @@ ipcMain.handle("util:deleteLang", () => {
   }
 });
 
-
-// ---------- IPC: Profiles ----------
 ipcMain.handle("profiles:list", () => {
   const dir = PROFILES_DIR();
   try {
@@ -471,7 +458,7 @@ ipcMain.handle("profiles:list", () => {
 });
 
 ipcMain.handle("profiles:save", (e, name) => {
-  const snapshot = readChanges(); // { changes: [...] }
+  const snapshot = readChanges();
   const dir = PROFILES_DIR();
   fs.mkdirSync(dir, { recursive: true });
 
@@ -488,8 +475,6 @@ ipcMain.handle("profiles:save", (e, name) => {
   }
 });
 
-
-
 ipcMain.handle("profiles:apply", (e, profileFile) => {
   const dir = PROFILES_DIR();
   const fp = path.join(dir, profileFile);
@@ -504,8 +489,7 @@ ipcMain.handle("profiles:apply", (e, profileFile) => {
   const { root_path } = readConfig();
   if (!root_path) return { ok: false, message: "Root path not set." };
 
-  // Build final desired values per file/key/lang (last change wins)
-  const updates = new Map(); // filename -> Map(key -> Map(lang -> value))
+  const updates = new Map();
   for (const ch of changes) {
     if (!ch || !ch.filename || !ch.key || !ch.language) continue;
     const byFile = updates.get(ch.filename) || new Map();
@@ -515,7 +499,6 @@ ipcMain.handle("profiles:apply", (e, profileFile) => {
     updates.set(ch.filename, byFile);
   }
 
-  // We'll append to the change log so "Recent changes" is repopulated.
   const log = readChanges();
   let applied = 0, skipped = 0, filesTouched = 0, logged = 0;
 
@@ -542,7 +525,6 @@ ipcMain.handle("profiles:apply", (e, profileFile) => {
           applied++;
           changed = true;
 
-          // Log the application so Recent changes shows the replayed edits
           log.changes.push({
             ts: new Date().toISOString(),
             filename,
@@ -565,4 +547,3 @@ ipcMain.handle("profiles:apply", (e, profileFile) => {
   writeChanges(log);
   return { ok: true, applied, skipped, filesTouched, logged };
 });
-

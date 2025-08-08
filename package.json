@@ -1,17 +1,62 @@
 {
   "name": "neowt",
-  "version": "1.2.0",
-  "private": true,
+  "productName": "NeoWT",
+  "version": "1.3.0",
+  "description": "NeoWT — a fast GUI for editing War Thunder localization CSV files.",
+  "author": "FrogFlavouredWater",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "set ELECTRON_ENABLE_LOGGING=1 && electron ."
+    "dev": "set ELECTRON_ENABLE_LOGGING=1 && electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis portable -p never",
+    "dist:nsis": "electron-builder --win nsis -p never",
+    "dist:portable": "electron-builder --win portable -p never"
+  },
+  "build": {
+    "appId": "com.neowt.app",
+    "productName": "NeoWT",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**",
+      "package.json",
+      "!**/*.map",
+      "!**/.idea/**",
+      "!**/node_modules/.bin/**"
+    ],
+    "extraResources": [
+      { "from": "src/res", "to": "res", "filter": ["**/*"] }
+    ],
+    "artifactName": "NeoWT-${version}-${arch}.${ext}",
+
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "NeoWT",
+      "artifactName": "NeoWT-Setup-${version}-${arch}.exe"
+    },
+    "portable": {
+      "artifactName": "NeoWT-${version}-${arch}-portable.exe"
+    }
   },
   "devDependencies": {
-    "electron": "^30.0.0"
+    "electron": "^30.5.1",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
-    "csv-parse": "^5.5.0",
+    "csv-parse": "^5.5.3",
     "csv-stringify": "^6.4.6"
   }
 }
