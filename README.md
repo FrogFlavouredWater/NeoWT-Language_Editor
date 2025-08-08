@@ -45,7 +45,7 @@ Or visit the [site](https://frogflavouredwater.github.io/NeoWT-Language_Editor/)
 2. On first run, set your **War Thunder root folder**:
    - Click **Browse** or **Auto‑locate**. (On Steam, it’s usually under `Steam/steamapps/common/War Thunder`.)
    - You can also open Steam → Library → War Thunder → **⚙️ Manage → Browse local files** to find it.
-3. **If you don’t see a **``** folder yet**
+3. **If you don’t see a **`lang`** folder yet**
    - Launch War Thunder once and/or enable custom localization. One common way is adding the following to your `config.blk` (inside the `debug{}` block), then launching the game once so it generates the folder:
      ```blk
      debug{
