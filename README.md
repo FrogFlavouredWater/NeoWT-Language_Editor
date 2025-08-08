@@ -66,7 +66,7 @@ Or visit the [site](https://frogflavouredwater.github.io/NeoWT-Language_Editor/)
 - **Save Profile** → Create a named snapshot of all current edits.
 - **Apply Profile** → Replay those edits into the latest CSVs.
 - **Delete Profile** → Remove a snapshot you no longer need.
-- **After a WT update**: The game may refresh the CSVs. Use NeoWT → **Utilities → Delete **`` (clears old files and your recent‑changes log). Launch WT once to regenerate `lang`, then **Apply Profile** to bring back your customizations.
+- **After a WT update**: The game may refresh the CSVs. Use NeoWT → **Utilities → Delete **`lang` (clears old files and your recent‑changes log). Launch WT once to regenerate `lang`, then **Apply Profile** to bring back your customizations.
 
 > Tip: *Apply Profile* repopulates **Recent changes** so you can see exactly what was applied (and undo individual items if needed).
 
