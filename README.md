@@ -3,7 +3,7 @@
 NeoWT is a friendly desktop app for Windows that lets you **search, edit, and manage War Thunder’s localization CSV files**. It includes fuzzy search, fast in‑place editing with undo, and **profiles** so your tweaks survive game updates.
 
 **Download for Windows:**\
-👉 [NeoWT‑Setup‑1.3.0‑x64.exe](https://github.com/FrogFlavouredWater/NeoWT-Language_Editor/releases/download/Release/NeoWT-Setup-1.3.0-x64.exe)
+[NeoWT‑Setup‑1.3.0‑x64.exe](https://github.com/FrogFlavouredWater/NeoWT-Language_Editor/releases/download/Release/NeoWT-Setup-1.3.0-x64.exe)
 
 Or visit the [site](https://frogflavouredwater.github.io/NeoWT-Language_Editor/)
 
